@@ -5,10 +5,10 @@ import ProjectsShowcase from "@/components/ProjectsShowcase";
 import CertificationsShowcase from "@/components/CertificationsShowcase";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
-import { getPortfolioData } from "@/lib/portfolio-data";
+import { getPortfolioDataAsync } from "@/lib/portfolio-data";
 
-export default function Home() {
-  const data = getPortfolioData();
+export default async function Home() {
+  const data = await getPortfolioDataAsync();
 
   return (
     <div className="relative min-h-screen bg-[#090d16] text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">

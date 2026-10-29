@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Terminal, ArrowUp } from "lucide-react";
+import { Terminal, ArrowUp, Lock } from "lucide-react";
 import { GithubIcon, LinkedinIcon, TwitterIcon } from "@/components/SocialIcons";
 import { ProfileInfo } from "@/types/portfolio";
 
@@ -92,7 +92,17 @@ export default function Footer({ profile }: FooterProps) {
 
         {/* Bottom Credits */}
         <div className="pt-8 border-t border-slate-900/90 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© 2026 {profile.name}. All rights reserved.</p>
+          <p className="flex items-center gap-2">
+            <span>© 2026 {profile.name}. All rights reserved.</span>
+            <Link
+              href="/admin"
+              aria-label="Admin Portal"
+              title="Admin Portal"
+              className="text-slate-800 hover:text-slate-500 transition-colors inline-flex items-center"
+            >
+              <Lock className="w-3 h-3 opacity-30 hover:opacity-100" />
+            </Link>
+          </p>
           <p className="flex items-center gap-1">
             Built with Next.js App Router, TypeScript & Tailwind CSS
           </p>

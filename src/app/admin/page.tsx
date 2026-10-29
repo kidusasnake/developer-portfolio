@@ -18,10 +18,19 @@ import {
   Eye,
   RefreshCw,
   ArrowLeft,
-  Upload
+  Upload,
+  Download,
+  Copy,
+  Check,
+  Database,
+  Server,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  FileJson
 } from "lucide-react";
 import AdminModal, { ModalType } from "@/components/AdminModal";
-import { PortfolioData, Project, Certification, ProfileInfo } from "@/types/portfolio";
+import { PortfolioData, Project, Certification, ProfileInfo, StorageStatus } from "@/types/portfolio";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -34,6 +43,9 @@ export default function AdminPage() {
 
   // Portfolio data in Admin
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
+  const [storageStatus, setStorageStatus] = useState<StorageStatus | null>(null);
+  const [showStorageGuide, setShowStorageGuide] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -49,11 +61,19 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const res = await fetch("/api/portfolio", { cache: "no-store" });
+      const [res, statusRes] = await Promise.all([
+        fetch("/api/portfolio", { cache: "no-store" }),
+        fetch("/api/portfolio?action=status", { cache: "no-store" })
+      ]);
+
       if (res.ok) {
         const data = await res.json();
         setPortfolioData(data);
         setProfileForm(data.profile);
+      }
+      if (statusRes.ok) {
+        const status = await statusRes.json();
+        setStorageStatus(status);
       }
     } catch (err) {
       console.error("Failed to load portfolio data in admin", err);
@@ -123,6 +143,69 @@ export default function AdminPage() {
     }
   };
 
+  // Export JSON file
+  const handleDownloadJSON = () => {
+    if (!portfolioData) return;
+    const blob = new Blob([JSON.stringify(portfolioData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "portfolio.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setFeedbackMessage({
+      type: "success",
+      text: "portfolio.json downloaded! You can commit this file to your git repository to make changes permanent."
+    });
+    setTimeout(() => setFeedbackMessage(null), 5000);
+  };
+
+  // Copy JSON to clipboard
+  const handleCopyJSON = () => {
+    if (!portfolioData) return;
+    navigator.clipboard.writeText(JSON.stringify(portfolioData, null, 2));
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2500);
+  };
+
+  // Import JSON file
+  const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!parsed.profile || !Array.isArray(parsed.projects) || !Array.isArray(parsed.certifications)) {
+        throw new Error("Invalid portfolio.json file structure.");
+      }
+
+      const res = await fetch("/api/portfolio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "import_data", payload: parsed })
+      });
+
+      if (res.ok) {
+        setFeedbackMessage({
+          type: "success",
+          text: "Successfully imported portfolio configuration! Changes are now live on production."
+        });
+        setTimeout(() => setFeedbackMessage(null), 4000);
+        loadData();
+      } else {
+        const err = await res.json();
+        setFeedbackMessage({ type: "error", text: err.error || "Failed to import portfolio data." });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to parse JSON file.";
+      setFeedbackMessage({ type: "error", text: msg });
+    }
+  };
+
   // CRUD for Projects
   const handleSaveProject = async (projectData: Partial<Project>, isEdit: boolean) => {
     const action = isEdit ? "update_project" : "add_project";
@@ -139,7 +222,7 @@ export default function AdminPage() {
 
     setFeedbackMessage({
       type: "success",
-      text: `Project successfully ${isEdit ? "updated" : "created"}! Changes are live.`
+      text: `Project successfully ${isEdit ? "updated" : "created"}! Changes are live on public landing page.`
     });
     setTimeout(() => setFeedbackMessage(null), 4000);
     loadData();
@@ -161,7 +244,7 @@ export default function AdminPage() {
 
     setFeedbackMessage({
       type: "success",
-      text: `Certification successfully ${isEdit ? "updated" : "registered"}! Changes are live.`
+      text: `Certification successfully ${isEdit ? "updated" : "registered"}! Changes are live on public landing page.`
     });
     setTimeout(() => setFeedbackMessage(null), 4000);
     loadData();
@@ -205,7 +288,7 @@ export default function AdminPage() {
       if (res.ok) {
         setFeedbackMessage({
           type: "success",
-          text: "Profile settings updated successfully! Live on landing page."
+          text: "Profile settings updated successfully! Live on public portfolio."
         });
         setTimeout(() => setFeedbackMessage(null), 4000);
         loadData();
@@ -320,7 +403,7 @@ export default function AdminPage() {
 
             <h1 className="text-2xl font-bold text-white tracking-tight">CMS Admin Portal</h1>
             <p className="text-xs text-slate-400 mt-1">
-              Enter your master password to manage projects, badges, and portfolio content.
+              Enter your master password (or Vercel ADMIN_PASSWORD) to manage your portfolio content.
             </p>
           </div>
 
@@ -335,7 +418,7 @@ export default function AdminPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Admin Password
+                  Admin Master Password / PIN
                 </label>
                 <div className="relative">
                   <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -361,7 +444,7 @@ export default function AdminPage() {
 
             <div className="mt-6 pt-5 border-t border-slate-800/80 text-center">
               <span className="text-[11px] text-slate-500 font-mono">
-                Default password: <code className="text-slate-300 bg-slate-900 px-1.5 py-0.5 rounded">admin123</code>
+                Default: <code className="text-slate-300 bg-slate-900 px-1.5 py-0.5 rounded">admin123</code> • Customize via <code className="text-indigo-400">ADMIN_PASSWORD</code>
               </span>
             </div>
           </div>
@@ -375,40 +458,85 @@ export default function AdminPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-20">
       {/* Top Admin Header */}
       <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-3.5 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-cyan-400">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-cyan-400 shrink-0">
               <Shield className="w-5 h-5" />
             </div>
             <div>
               <div className="font-bold text-white text-base flex items-center gap-2">
                 Portfolio CMS Dashboard
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold border border-emerald-500/20">
-                  Live Sync
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  storageStatus?.isPersistent
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                }`}>
+                  {storageStatus?.providerName || "Serverless Ready"}
                 </span>
               </div>
               <div className="text-xs text-slate-400">
-                Logged in as Admin • Direct filesystem & API persistence
+                Connected to <span className="text-indigo-400 font-mono">kidusasnake.pro.et</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap justify-end">
+            {/* Download JSON Button */}
+            <button
+              onClick={handleDownloadJSON}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors shadow-sm"
+              title="Download updated portfolio.json file to commit to git"
+            >
+              <Download className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Export JSON</span>
+            </button>
+
+            {/* Copy JSON Button */}
+            <button
+              onClick={handleCopyJSON}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+              title="Copy portfolio JSON to clipboard"
+            >
+              {copySuccess ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Copy JSON</span>
+                </>
+              )}
+            </button>
+
+            {/* Import JSON */}
+            <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+              <FileJson className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Import JSON</span>
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImportJSON}
+              />
+            </label>
+
             {/* View Live Public Site */}
             <Link
               href="/"
               target="_blank"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-800/50 transition-colors"
             >
-              <Eye className="w-3.5 h-3.5 text-cyan-400" />
-              <span>View Live Site</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
+              <Eye className="w-3.5 h-3.5" />
+              <span>View Site</span>
+              <ExternalLink className="w-3 h-3 text-cyan-400" />
             </Link>
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>
@@ -436,6 +564,96 @@ export default function AdminPage() {
             <span className="font-medium">{feedbackMessage.text}</span>
           </div>
         )}
+
+        {/* Persistence Status & Dual Mode Banner */}
+        <div className="mb-8 p-5 rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-md">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className={`p-2.5 rounded-2xl shrink-0 ${
+                storageStatus?.isPersistent
+                  ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                  : "bg-amber-500/10 border border-amber-500/30 text-amber-400"
+              }`}>
+                {storageStatus?.isPersistent ? <Database className="w-5 h-5" /> : <Server className="w-5 h-5" />}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white text-sm">
+                    Storage Persistence: {storageStatus?.providerName}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    storageStatus?.isPersistent
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "bg-amber-500/20 text-amber-300"
+                  }`}>
+                    {storageStatus?.isPersistent ? "Automated Cloud DB" : "Dual Mode Active"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                  {storageStatus?.message}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowStorageGuide(!showStorageGuide)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              >
+                <Info className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{showStorageGuide ? "Hide Setup Guide" : "Cloud DB Setup"}</span>
+                {showStorageGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Collapsible Cloud DB Setup Guide */}
+          {showStorageGuide && (
+            <div className="mt-5 pt-5 border-t border-slate-800 text-xs text-slate-300 animate-in fade-in duration-200 space-y-4">
+              <p className="font-semibold text-white">
+                How to enable 100% automated cloud database persistence on Vercel:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Vercel KV / Upstash Card */}
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                  <div className="font-bold text-cyan-400 flex items-center justify-between">
+                    <span>Option A: Vercel KV / Upstash (Recommended)</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/50">1-Click Free</span>
+                  </div>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    In your Vercel Project Dashboard, click <strong>Storage</strong> → <strong>Create KV Database</strong> → <strong>Connect</strong>.
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Vercel automatically populates:
+                  </p>
+                  <pre className="p-2 rounded bg-slate-900 border border-slate-800 text-[10px] text-indigo-300 font-mono">
+                    KV_REST_API_URL=&quot;https://...&quot;&#10;KV_REST_API_TOKEN=&quot;...&quot;
+                  </pre>
+                </div>
+
+                {/* GitHub Auto-Commit Card */}
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                  <div className="font-bold text-emerald-400 flex items-center justify-between">
+                    <span>Option B: GitHub Auto-Commit Sync</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50">Zero DB</span>
+                  </div>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    Add a GitHub Personal Access Token to your Vercel Environment Variables. Every admin save will commit directly to git:
+                  </p>
+                  <pre className="p-2 rounded bg-slate-900 border border-slate-800 text-[10px] text-emerald-300 font-mono">
+                    GITHUB_TOKEN=&quot;ghp_...&quot;&#10;GITHUB_REPO=&quot;kidusasnake/developer-portfolio&quot;
+                  </pre>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-900/50 text-[11px] text-indigo-200">
+                💡 <strong>Dual Mode Tip:</strong> You don&apos;t need any external database right now! Simply edit your portfolio in this dashboard, click <strong>&ldquo;Export JSON&rdquo;</strong>, replace <code className="bg-slate-900 px-1 py-0.5 rounded">data/portfolio.json</code>, and run <code className="bg-slate-900 px-1 py-0.5 rounded">git push origin main</code>.
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Tab Controls & Refresh */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">

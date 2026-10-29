@@ -13,10 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Alex Rivera | Senior Full-Stack & Cloud Architect Portfolio",
+  metadataBase: new URL("https://kidusasnake.pro.et"),
+  title: "Kidus Asnake | Full-Stack Software Engineer & Cloud Architect",
   description:
-    "Modular developer portfolio featuring high-performance systems, verified cloud certifications, production projects, and an interactive CMS admin interface.",
+    "Modular developer portfolio featuring high-performance cloud systems, verified certifications, production projects, and an interactive CMS admin interface.",
   keywords: [
+    "Kidus Asnake",
     "Full Stack Developer",
     "Cloud Architect",
     "Next.js",
@@ -24,12 +26,15 @@ export const metadata: Metadata = {
     "Tailwind CSS",
     "Kubernetes",
     "AWS",
-    "Portfolio"
+    "Portfolio",
+    "Ethiopia Developer"
   ],
-  authors: [{ name: "Alex Rivera" }],
+  authors: [{ name: "Kidus Asnake", url: "https://kidusasnake.pro.et" }],
   openGraph: {
-    title: "Alex Rivera | Senior Full-Stack & Cloud Architect",
+    title: "Kidus Asnake | Full-Stack Software Engineer & Cloud Architect",
     description: "Explore production projects, verified cloud certifications, and live architecture demos.",
+    url: "https://kidusasnake.pro.et",
+    siteName: "Kidus Asnake Portfolio",
     type: "website"
   }
 };

@@ -53,3 +53,15 @@ export interface PortfolioData {
   projects: Project[];
   certifications: Certification[];
 }
+
+export interface StorageStatus {
+  mode: "cloud_kv" | "supabase" | "github_sync" | "serverless_dual_mode" | "local_filesystem";
+  isPersistent: boolean;
+  providerName: string;
+  message: string;
+  setupGuide?: {
+    serviceName: string;
+    envVars: string[];
+    docsUrl: string;
+  };
+}

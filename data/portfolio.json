@@ -1,15 +1,15 @@
 {
   "profile": {
-    "name": "Alex Rivera",
-    "title": "Senior Full-Stack & Cloud Architect",
-    "headline": "Building resilient cloud systems & high-converting modern web applications.",
-    "bio": "Senior Software Engineer with 6+ years of expertise spanning Next.js, TypeScript, distributed microservices, and multi-cloud architectures. Passionate about performant developer tools, accessible UI design, and cloud-native solutions.",
+    "name": "Kidus Asnake",
+    "title": "Full-Stack Software Engineer & Cloud Architect",
+    "headline": "Building high-performance web systems, cloud architectures & elegant digital products.",
+    "bio": "Full-stack engineer with 6+ years of expertise spanning Next.js, TypeScript, distributed microservices, and multi-cloud architectures. Passionate about performant developer tools, accessible UI design, and cloud-native solutions.",
     "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
     "resumeUrl": "/resume.pdf",
-    "location": "San Francisco, CA (Open to Remote)",
-    "email": "alex.rivera.dev@gmail.com",
-    "github": "https://github.com",
-    "linkedin": "https://linkedin.com",
+    "location": "Addis Ababa, Ethiopia (Open to Remote / Global)",
+    "email": "kidusasnake003@gmail.com",
+    "github": "https://github.com/kidusasnake",
+    "linkedin": "https://linkedin.com/in/kidusasnake",
     "twitter": "https://twitter.com",
     "availableForWork": true,
     "stats": {
