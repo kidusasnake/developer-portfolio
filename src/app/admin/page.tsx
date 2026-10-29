@@ -27,7 +27,10 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
-  FileJson
+  FileJson,
+  Mail,
+  Send,
+  Sparkles
 } from "lucide-react";
 import AdminModal, { ModalType } from "@/components/AdminModal";
 import { PortfolioData, Project, Certification, ProfileInfo, StorageStatus } from "@/types/portfolio";
@@ -37,6 +40,15 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Forgot Password / OTP State
+  const [authMode, setAuthMode] = useState<"login" | "forgot_email" | "forgot_otp">("login");
+  const [recoveryEmail, setRecoveryEmail] = useState("kidusasnake003@gmail.com");
+  const [otpCode, setOtpCode] = useState("");
+  const [resetFeedback, setResetFeedback] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
+  const [devCodeHelper, setDevCodeHelper] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Active Tab: 'projects' | 'certifications' | 'profile'
   const [activeTab, setActiveTab] = useState<"projects" | "certifications" | "profile">("projects");
@@ -116,7 +128,7 @@ export default function AdminPage() {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password, rememberMe })
       });
       const data = await res.json();
 
@@ -130,6 +142,90 @@ export default function AdminPage() {
       setAuthError("Failed to authenticate. Please check server status.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Request recovery OTP email
+  const handleRequestResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetFeedback(null);
+    setDevCodeHelper(null);
+
+    try {
+      const res = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "request_code",
+          email: recoveryEmail
+        })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setResetFeedback({
+          type: "success",
+          text: data.message || `Verification code sent to ${data.email || recoveryEmail}`
+        });
+        if (data.devCode) {
+          setDevCodeHelper(data.devCode);
+        }
+        setAuthMode("forgot_otp");
+      } else {
+        setResetFeedback({
+          type: "error",
+          text: data.error || "Failed to dispatch recovery code."
+        });
+      }
+    } catch {
+      setResetFeedback({
+        type: "error",
+        text: "Network error sending recovery code."
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  // Verify OTP & Sign In directly
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetFeedback(null);
+
+    try {
+      const res = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify_and_login",
+          email: recoveryEmail,
+          code: otpCode,
+          rememberMe
+        })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.authenticated) {
+        setIsAuthenticated(true);
+        setAuthMode("login");
+        setOtpCode("");
+        setDevCodeHelper(null);
+        loadData();
+      } else {
+        setResetFeedback({
+          type: "error",
+          text: data.error || "Invalid or expired verification code."
+        });
+      }
+    } catch {
+      setResetFeedback({
+        type: "error",
+        text: "Network error verifying code."
+      });
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -377,7 +473,7 @@ export default function AdminPage() {
     );
   }
 
-  // 2. LOGIN FORM VIEW
+  // 2. LOGIN & RECOVERY VIEW
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -397,50 +493,239 @@ export default function AdminPage() {
 
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-400 p-0.5 mx-auto mb-4 shadow-lg shadow-indigo-500/25">
               <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-cyan-400">
-                <Shield className="w-7 h-7" />
+                {authMode === "login" ? (
+                  <Shield className="w-7 h-7" />
+                ) : (
+                  <Mail className="w-7 h-7" />
+                )}
               </div>
             </div>
 
-            <h1 className="text-2xl font-bold text-white tracking-tight">CMS Admin Portal</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              {authMode === "login" && "CMS Admin Portal"}
+              {authMode === "forgot_email" && "Recover Access"}
+              {authMode === "forgot_otp" && "Enter Security Code"}
+            </h1>
             <p className="text-xs text-slate-400 mt-1">
-              Enter your master password (or Vercel ADMIN_PASSWORD) to manage your portfolio content.
+              {authMode === "login" && "Enter your master password (or Vercel ADMIN_PASSWORD) to manage your portfolio content."}
+              {authMode === "forgot_email" && "Enter your registered email address to receive a 6-digit one-time sign-in code."}
+              {authMode === "forgot_otp" && "We sent a 6-digit one-time code to your registered email. Enter it below to unlock the dashboard."}
             </p>
           </div>
 
           <div className="glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl">
-            {authError && (
+            {/* Feedback messages */}
+            {authError && authMode === "login" && (
               <div className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{authError}</span>
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Admin Master Password / PIN
-                </label>
-                <div className="relative">
-                  <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            {resetFeedback && authMode !== "login" && (
+              <div
+                className={`mb-5 p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  resetFeedback.type === "success"
+                    ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                    : "bg-red-500/10 border border-red-500/30 text-red-400"
+                }`}
+              >
+                {resetFeedback.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                )}
+                <span>{resetFeedback.text}</span>
+              </div>
+            )}
+
+            {/* Helper for dev/preview fallback mode */}
+            {authMode === "forgot_otp" && devCodeHelper && (
+              <div className="mb-5 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>
+                    Direct code: <strong className="font-mono text-cyan-200 tracking-wider">{devCodeHelper}</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOtpCode(devCodeHelper)}
+                  className="px-2 py-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-mono text-[11px] transition-colors"
+                >
+                  Auto-fill
+                </button>
+              </div>
+            )}
+
+            {/* VIEW 1: Standard Password Login */}
+            {authMode === "login" && (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Admin Master Password / PIN
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="password"
+                      required
+                      placeholder="Enter password (default: admin123)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Remember Me & Forgot Password Row */}
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500/20 accent-indigo-500"
+                    />
+                    <span className="text-slate-400 hover:text-slate-300 transition-colors">
+                      Remember me (30 days)
+                    </span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("forgot_email");
+                      setAuthError("");
+                      setResetFeedback(null);
+                    }}
+                    className="text-indigo-400 hover:text-indigo-300 transition-colors font-medium hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50"
+                >
+                  {loading ? "Authenticating..." : "Unlock Dashboard"}
+                </button>
+              </form>
+            )}
+
+            {/* VIEW 2: Request Recovery Code */}
+            {authMode === "forgot_email" && (
+              <form onSubmit={handleRequestResetCode} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Registered Portfolio Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="kidusasnake003@gmail.com"
+                      value={recoveryEmail}
+                      onChange={(e) => setRecoveryEmail(e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    Must match your portfolio owner email (<code className="text-slate-400">kidusasnake003@gmail.com</code>).
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{resetLoading ? "Sending Code..." : "Send Verification Code"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("login");
+                    setResetFeedback(null);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors py-2"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Password Login</span>
+                </button>
+              </form>
+            )}
+
+            {/* VIEW 3: Verify OTP Code */}
+            {authMode === "forgot_otp" && (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 text-center">
+                    Enter 6-Digit Verification Code
+                  </label>
                   <input
-                    type="password"
+                    type="text"
                     required
-                    placeholder="Enter password (default: admin123)"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                    maxLength={6}
+                    autoFocus
+                    placeholder="123456"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ""))}
+                    className="w-full text-center font-mono text-2xl tracking-[0.4em] bg-slate-950/80 border border-slate-800 rounded-xl py-3 text-cyan-400 placeholder-slate-700 focus:outline-none focus:border-cyan-500 transition-colors"
                   />
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50"
-              >
-                {loading ? "Authenticating..." : "Unlock Dashboard"}
-              </button>
-            </form>
+                <div className="flex items-center justify-center text-xs pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500/20 accent-indigo-500"
+                    />
+                    <span className="text-slate-400 hover:text-slate-300 transition-colors">
+                      Remember me (30 days)
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={resetLoading || otpCode.length !== 6}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white font-semibold text-sm shadow-lg shadow-cyan-500/25 transition-all disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{resetLoading ? "Verifying..." : "Verify & Unlock Dashboard"}</span>
+                </button>
+
+                <div className="flex items-center justify-between text-xs pt-2">
+                  <button
+                    type="button"
+                    onClick={handleRequestResetCode}
+                    disabled={resetLoading}
+                    className="text-slate-400 hover:text-cyan-400 transition-colors"
+                  >
+                    Resend Code
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("login");
+                      setResetFeedback(null);
+                    }}
+                    className="text-slate-400 hover:text-white transition-colors"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              </form>
+            )}
 
             <div className="mt-6 pt-5 border-t border-slate-800/80 text-center">
               <span className="text-[11px] text-slate-500 font-mono">

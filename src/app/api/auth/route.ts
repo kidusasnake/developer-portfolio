@@ -24,18 +24,19 @@ function verifyPassword(input: string, expected: string): boolean {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { password } = body;
+    const { password, rememberMe } = body;
 
     if (password && verifyPassword(password, ADMIN_PASSWORD)) {
       const cookieStore = await cookies();
       const token = getSessionToken();
+      const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days vs 7 days
 
       cookieStore.set(AUTH_COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7 // 7 days
+        maxAge
       });
 
       return NextResponse.json({ success: true, authenticated: true });
