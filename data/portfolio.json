@@ -1,0 +1,248 @@
+{
+  "profile": {
+    "name": "Alex Rivera",
+    "title": "Senior Full-Stack & Cloud Architect",
+    "headline": "Building resilient cloud systems & high-converting modern web applications.",
+    "bio": "Senior Software Engineer with 6+ years of expertise spanning Next.js, TypeScript, distributed microservices, and multi-cloud architectures. Passionate about performant developer tools, accessible UI design, and cloud-native solutions.",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
+    "resumeUrl": "/resume.pdf",
+    "location": "San Francisco, CA (Open to Remote)",
+    "email": "alex.rivera.dev@gmail.com",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "twitter": "https://twitter.com",
+    "availableForWork": true,
+    "stats": {
+      "yearsExperience": "6+",
+      "projectsShipped": "24+",
+      "certificationsVerified": "5",
+      "githubContributions": "2.8k+"
+    }
+  },
+  "projects": [
+    {
+      "id": "proj-1",
+      "title": "OmniFlow AI - Intelligent Agent Orchestrator",
+      "description": "Enterprise-grade autonomous workflow engine with multi-model LLM chaining, visual DAG pipeline builder, and sub-second execution runtime.",
+      "longDescription": "Built for high-throughput workflow execution, OmniFlow enables enterprise teams to construct and monitor real-time AI agent graphs. Includes automatic retry pipelines, telemetry exports to OpenTelemetry, and token-cost optimization algorithms.",
+      "tags": [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "Python",
+        "FastAPI",
+        "OpenAI"
+      ],
+      "repoUrl": "https://github.com/example/omniflow-ai",
+      "liveUrl": "https://omniflow-demo.vercel.app",
+      "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+      "featured": true,
+      "role": "Lead Architect",
+      "metrics": "140k req/min peak throughput",
+      "createdAt": "2024-02-15"
+    },
+    {
+      "id": "proj-2",
+      "title": "PulseCloud - Serverless Infrastructure Telemetry",
+      "description": "High-velocity observability dashboard streaming real-time Kubernetes cluster health, memory pressure alerts, and distributed request traces.",
+      "longDescription": "Processes real-time telemetry from thousands of container nodes using WebSocket streams and WebGL charting. Achieved 60fps rendering under 100k data points/sec with zero browser stutter.",
+      "tags": [
+        "React",
+        "TypeScript",
+        "Go",
+        "Docker",
+        "Kubernetes",
+        "Tailwind CSS"
+      ],
+      "repoUrl": "https://github.com/example/pulse-cloud",
+      "liveUrl": "https://pulsecloud-preview.dev",
+      "imageUrl": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80",
+      "featured": true,
+      "role": "Systems Engineer",
+      "metrics": "< 12ms ingestion latency",
+      "createdAt": "2023-11-20"
+    },
+    {
+      "id": "proj-3",
+      "title": "AuraDB - Distributed Vector Memory Engine",
+      "description": "Ultra-lightweight vector search and embedding cache built for local and edge inference with HNSW indexing and quantization support.",
+      "longDescription": "A zero-dependency vector engine engineered for fast nearest-neighbor retrieval. Benchmarked at 99.4% recall on SIFT1M dataset while reducing memory footprint by 45%.",
+      "tags": [
+        "Rust",
+        "TypeScript",
+        "Next.js",
+        "Vector DB",
+        "WebAssembly"
+      ],
+      "repoUrl": "https://github.com/example/aura-db",
+      "liveUrl": "https://auradb.io",
+      "imageUrl": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop&q=80",
+      "featured": true,
+      "role": "Core Maintainer",
+      "metrics": "1.8ms p99 query time",
+      "createdAt": "2024-01-10"
+    },
+    {
+      "id": "proj-4",
+      "title": "Nebula UI - Accessible Headless Component System",
+      "description": "WCAG 2.1 AAA compliant design system featuring polymorphic React primitives, fluid token-based themes, and zero-runtime CSS support.",
+      "longDescription": "Created to bridge enterprise design consistency and engineering performance. Adopted across 12 product teams and battle-tested with full keyboard navigation and screen-reader tree coverage.",
+      "tags": [
+        "React",
+        "TypeScript",
+        "Tailwind CSS",
+        "Storybook",
+        "Figma"
+      ],
+      "repoUrl": "https://github.com/example/nebula-ui",
+      "liveUrl": "https://nebula-ui.design",
+      "imageUrl": "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800&auto=format&fit=crop&q=80",
+      "featured": false,
+      "role": "Creator & Maintainer",
+      "metrics": "45k monthly npm downloads",
+      "createdAt": "2023-08-04"
+    },
+    {
+      "id": "proj-5",
+      "title": "Synthetix Settlement - Multi-Chain Liquidity Bridge",
+      "description": "Cryptographically verified settlement layer enabling zero-slippage cross-chain swaps with automated rebalancing and zk-proof verification.",
+      "longDescription": "Engineered smart contracts and Next.js DApp interface supporting EVM and non-EVM chains. Integrated gas estimation heuristics and simulated transaction previews for enhanced user safety.",
+      "tags": [
+        "Next.js",
+        "Web3",
+        "Solidity",
+        "TypeScript",
+        "Ethers.js"
+      ],
+      "repoUrl": "https://github.com/example/synthetix-bridge",
+      "liveUrl": "https://synthetix-bridge.finance",
+      "imageUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&auto=format&fit=crop&q=80",
+      "featured": false,
+      "role": "Smart Contract & Frontend Dev",
+      "metrics": "$12M+ volume bridged",
+      "createdAt": "2023-06-18"
+    },
+    {
+      "id": "proj-6",
+      "title": "DevPulse - Engineering Velocity & Metrics Suite",
+      "description": "Data analytics suite parsing GitHub PR cycle times, code review bottlenecks, and deployment frequencies based on DORA metrics.",
+      "longDescription": "Integrates directly with Git providers to compute lead time for changes, deployment frequency, and mean time to recovery with actionable team insights.",
+      "tags": [
+        "Next.js",
+        "PostgreSQL",
+        "Tailwind CSS",
+        "TypeScript",
+        "Chart.js"
+      ],
+      "repoUrl": "https://github.com/example/devpulse-analytics",
+      "liveUrl": "https://devpulse.analytics",
+      "imageUrl": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80",
+      "featured": false,
+      "role": "Full-Stack Engineer",
+      "metrics": "Used by 30+ engineering squads",
+      "createdAt": "2023-04-12"
+    }
+  ],
+  "certifications": [
+    {
+      "title": "vcxhbcd",
+      "issuer": "jfeccbu",
+      "issueDate": "2024",
+      "expiryDate": "2027",
+      "credentialId": "bcyvccn",
+      "verificationUrl": "https://hvcgc",
+      "badgeUrl": "/badges/aws-architect.svg",
+      "skills": [
+        "Cloud Architecture",
+        "Security",
+        "Systems Design"
+      ],
+      "id": "cert-1793298379934"
+    },
+    {
+      "id": "cert-1",
+      "title": "AWS Certified Solutions Architect – Professional",
+      "issuer": "Amazon Web Services (AWS)",
+      "issueDate": "Jan 2024",
+      "expiryDate": "Jan 2027",
+      "credentialId": "AWS-PSA-9482104",
+      "verificationUrl": "https://aws.amazon.com/verification",
+      "badgeUrl": "/badges/aws-architect.svg",
+      "skills": [
+        "Multi-Tier Architecture",
+        "Cost Optimization",
+        "Disaster Recovery",
+        "CloudFront & VPC",
+        "IAM"
+      ]
+    },
+    {
+      "id": "cert-2",
+      "title": "Google Cloud Certified – Professional Cloud Architect",
+      "issuer": "Google Cloud",
+      "issueDate": "May 2023",
+      "expiryDate": "May 2026",
+      "credentialId": "GCP-PCA-839201",
+      "verificationUrl": "https://cloud.google.com/certification",
+      "badgeUrl": "/badges/gcp-architect.svg",
+      "skills": [
+        "GCP Infrastructure",
+        "GKE & Kubernetes",
+        "Cloud Spanner",
+        "BigQuery",
+        "Site Reliability"
+      ]
+    },
+    {
+      "id": "cert-3",
+      "title": "Certified Kubernetes Administrator (CKA)",
+      "issuer": "Cloud Native Computing Foundation (CNCF)",
+      "issueDate": "Nov 2023",
+      "expiryDate": "Nov 2026",
+      "credentialId": "LF-CKA-773019",
+      "verificationUrl": "https://www.cncf.io/certification/cka/",
+      "badgeUrl": "/badges/kubernetes-cka.svg",
+      "skills": [
+        "Cluster Architecture",
+        "Troubleshooting",
+        "Ingress & CNI",
+        "Pod Security",
+        "Storage Classes"
+      ]
+    },
+    {
+      "id": "cert-4",
+      "title": "HashiCorp Certified: Terraform Associate (003)",
+      "issuer": "HashiCorp",
+      "issueDate": "Mar 2024",
+      "expiryDate": "Mar 2026",
+      "credentialId": "HASHI-TA-449102",
+      "verificationUrl": "https://www.credly.com",
+      "badgeUrl": "/badges/terraform.svg",
+      "skills": [
+        "Infrastructure as Code",
+        "Terraform Cloud",
+        "HCL Modules",
+        "State Management",
+        "CI/CD Integration"
+      ]
+    },
+    {
+      "id": "cert-5",
+      "title": "Meta Front-End Developer Specialization",
+      "issuer": "Meta",
+      "issueDate": "Aug 2023",
+      "expiryDate": "Lifetime Credential",
+      "credentialId": "META-FED-550192",
+      "verificationUrl": "https://www.coursera.org/verify/professional-cert/meta",
+      "badgeUrl": "/badges/meta-badge.svg",
+      "skills": [
+        "React 18+",
+        "Web Standards & DOM",
+        "Advanced UI UX",
+        "Responsive Systems",
+        "Jest & RTL"
+      ]
+    }
+  ]
+}

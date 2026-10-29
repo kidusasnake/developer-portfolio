@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="gcpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4285F4" />
+      <stop offset="50%" stop-color="#34A853" />
+      <stop offset="100%" stop-color="#EA4335" />
+    </linearGradient>
+  </defs>
+  <rect width="112" height="112" x="4" y="4" rx="28" fill="#1e293b" stroke="#334155" stroke-width="2" />
+  <circle cx="60" cy="50" r="32" fill="#0f172a" stroke="url(#gcpGrad)" stroke-width="4" />
+  <!-- GCP Cloud Hexagon -->
+  <path d="M60 32 L75 41 L75 59 L60 68 L45 59 L45 41 Z" fill="#4285F4" opacity="0.9" />
+  <circle cx="60" cy="50" r="7" fill="#ffffff" />
+  <rect x="20" y="86" width="80" height="20" rx="10" fill="#0f172a" />
+  <text x="60" y="100" font-family="system-ui, sans-serif" font-size="9" font-weight="800" fill="#60A5FA" text-anchor="middle" letter-spacing="1">GCP ARCH</text>
+</svg>
