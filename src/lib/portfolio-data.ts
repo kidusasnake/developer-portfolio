@@ -176,30 +176,33 @@ async function syncToGitHub(data: PortfolioData): Promise<boolean> {
 
 // Read from local or /tmp filesystem
 function readLocalFile(): PortfolioData {
-  if (memoryCache) {
-    return memoryCache;
-  }
-
-  // 1. Try /tmp file if on Vercel
+  // 1. In Vercel serverless environment, check /tmp file first if updated at runtime
   if (process.env.VERCEL && fs.existsSync(TMP_FILE_PATH)) {
     try {
       const content = fs.readFileSync(TMP_FILE_PATH, "utf8");
-      memoryCache = JSON.parse(content) as PortfolioData;
-      return memoryCache;
-    } catch {
-      // ignore
+      const parsed = JSON.parse(content) as PortfolioData;
+      memoryCache = parsed;
+      return parsed;
+    } catch (err) {
+      console.error("Vercel /tmp read error:", err);
     }
   }
 
-  // 2. Read bundled data/portfolio.json
+  // 2. Always read fresh data/portfolio.json from filesystem if available
   try {
     if (fs.existsSync(DATA_FILE_PATH)) {
       const content = fs.readFileSync(DATA_FILE_PATH, "utf8");
-      memoryCache = JSON.parse(content) as PortfolioData;
-      return memoryCache;
+      const parsed = JSON.parse(content) as PortfolioData;
+      memoryCache = parsed;
+      return parsed;
     }
   } catch (err) {
     console.error("Local file read error:", err);
+  }
+
+  // 3. Fall back to memoryCache if available, or default seed data
+  if (memoryCache) {
+    return memoryCache;
   }
 
   memoryCache = DEFAULT_PORTFOLIO_DATA;
@@ -357,7 +360,14 @@ export async function deleteCertificationAsync(id: string): Promise<boolean> {
 // Profile update helper
 export async function updateProfileAsync(updates: Partial<ProfileInfo>): Promise<ProfileInfo> {
   const data = await getPortfolioDataAsync();
-  data.profile = { ...data.profile, ...updates };
+  data.profile = {
+    ...data.profile,
+    ...updates,
+    stats: {
+      ...data.profile.stats,
+      ...(updates.stats || {})
+    }
+  };
   await savePortfolioDataAsync(data);
   return data.profile;
 }
@@ -430,7 +440,14 @@ export function deleteCertification(id: string): boolean {
 
 export function updateProfile(updates: Partial<ProfileInfo>): ProfileInfo {
   const data = getPortfolioData();
-  data.profile = { ...data.profile, ...updates };
+  data.profile = {
+    ...data.profile,
+    ...updates,
+    stats: {
+      ...data.profile.stats,
+      ...(updates.stats || {})
+    }
+  };
   savePortfolioData(data);
   return data.profile;
 }

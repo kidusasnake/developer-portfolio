@@ -123,7 +123,9 @@ export default function ContactSection({ profile }: ContactSectionProps) {
                 <span>Next Availability Window</span>
               </div>
               <p className="text-xs text-slate-300">
-                Immediately available for Q1–Q2 engagements. Remote global or hybrid San Francisco.
+                {profile.availableForWork
+                  ? `Immediately available for high-impact engagements. ${profile.location ? `Based in ${profile.location}.` : "Open to remote & global contracts."}`
+                  : "Currently committed to active engagements. Inquire for upcoming availability."}
               </p>
             </div>
           </div>

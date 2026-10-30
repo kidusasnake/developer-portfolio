@@ -28,7 +28,7 @@ export default function Footer({ profile }: FooterProps) {
               <span className="font-bold text-white text-base tracking-tight">{profile.name}</span>
             </Link>
             <p className="text-xs text-slate-400 max-w-sm">
-              Modular developer portfolio powered by Next.js App Router, Tailwind CSS, and headless JSON CMS.
+              {profile.headline || "Modular developer portfolio powered by Next.js App Router, Tailwind CSS, and headless JSON CMS."}
             </p>
           </div>
 

@@ -8,6 +8,42 @@ interface HeroProps {
   profile: ProfileInfo;
 }
 
+function renderHeadline(headline: string) {
+  if (!headline) {
+    return (
+      <>
+        Engineering scalable{" "}
+        <span className="glow-gradient-text">cloud systems</span> & reactive web applications.
+      </>
+    );
+  }
+
+  // If user used & in headline, highlight the second part with gradient
+  if (headline.includes("&")) {
+    const parts = headline.split("&");
+    return (
+      <>
+        {parts[0].trim()}{" "}
+        <span className="glow-gradient-text">&amp; {parts.slice(1).join("&").trim()}</span>
+      </>
+    );
+  }
+
+  // If headline has multiple words, highlight the second half with gradient
+  const words = headline.trim().split(/\s+/);
+  if (words.length > 3) {
+    const mid = Math.ceil(words.length / 2);
+    return (
+      <>
+        {words.slice(0, mid).join(" ")}{" "}
+        <span className="glow-gradient-text">{words.slice(mid).join(" ")}</span>
+      </>
+    );
+  }
+
+  return <span className="glow-gradient-text">{headline}</span>;
+}
+
 export default function Hero({ profile }: HeroProps) {
   return (
     <section id="about" className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
@@ -36,8 +72,7 @@ export default function Hero({ profile }: HeroProps) {
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] mb-6">
-              Engineering scalable{" "}
-              <span className="glow-gradient-text">cloud systems</span> & reactive web applications.
+              {renderHeadline(profile.headline)}
             </h1>
 
             {/* Value Proposition & Bio */}
@@ -49,7 +84,7 @@ export default function Hero({ profile }: HeroProps) {
             <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto mb-12">
               <a
                 href={profile.resumeUrl}
-                download="Alex_Rivera_Resume.pdf"
+                download={`${(profile.name || "Resume").replace(/\s+/g, "_")}_Resume.pdf`}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200"
               >
                 <Download className="w-4 h-4" />

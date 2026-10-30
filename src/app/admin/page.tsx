@@ -1424,7 +1424,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                     Location
@@ -1455,6 +1455,18 @@ export default function AdminPage() {
                     type="url"
                     value={profileForm.linkedin}
                     onChange={(e) => setProfileForm({ ...profileForm, linkedin: e.target.value })}
+                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Twitter / X URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://x.com/username"
+                    value={profileForm.twitter || ""}
+                    onChange={(e) => setProfileForm({ ...profileForm, twitter: e.target.value })}
                     className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
                   />
                 </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Terminal, Menu, X } from "lucide-react";
-import { GithubIcon, LinkedinIcon } from "@/components/SocialIcons";
+import { GithubIcon, LinkedinIcon, TwitterIcon } from "@/components/SocialIcons";
 import { ProfileInfo } from "@/types/portfolio";
 
 interface NavbarProps {
@@ -43,8 +43,8 @@ export default function Navbar({ profile }: NavbarProps) {
               <div className="font-bold text-white tracking-tight text-lg group-hover:text-cyan-400 transition-colors">
                 {profile.name}
               </div>
-              <div className="text-xs text-slate-400 hidden sm:block">
-                {profile.title.split("&")[0]}
+              <div className="text-xs text-slate-400 hidden sm:block max-w-[200px] truncate">
+                {profile.title.split("&")[0].trim()}
               </div>
             </div>
           </Link>
@@ -97,6 +97,18 @@ export default function Navbar({ profile }: NavbarProps) {
             >
               <LinkedinIcon className="w-4 h-4" />
             </a>
+
+            {profile.twitter && (
+              <a
+                href={profile.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Twitter Profile"
+                className="w-9 h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-700 transition-colors"
+              >
+                <TwitterIcon className="w-4 h-4" />
+              </a>
+            )}
 
             <a
               href="#contact"
@@ -165,6 +177,16 @@ export default function Navbar({ profile }: NavbarProps) {
                 >
                   <LinkedinIcon className="w-4 h-4" />
                 </a>
+                {profile.twitter && (
+                  <a
+                    href={profile.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded bg-slate-800 text-slate-300"
+                  >
+                    <TwitterIcon className="w-4 h-4" />
+                  </a>
+                )}
               </div>
               <a
                 href="#contact"

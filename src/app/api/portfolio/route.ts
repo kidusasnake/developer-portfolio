@@ -32,6 +32,16 @@ async function isAuthorized(): Promise<boolean> {
   return !!token && token === getExpectedSessionToken();
 }
 
+function revalidatePortfolio() {
+  try {
+    revalidatePath("/", "page");
+    revalidatePath("/", "layout");
+    revalidatePath("/admin", "page");
+  } catch (err) {
+    console.error("Revalidation error:", err);
+  }
+}
+
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const action = searchParams.get("action");
@@ -79,41 +89,44 @@ export async function POST(req: NextRequest) {
     switch (action) {
       case "add_project": {
         const newProj = await addProjectAsync(payload);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, item: newProj });
       }
       case "update_project": {
         const { id, ...updates } = payload;
         const updated = await updateProjectAsync(id, updates);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, item: updated });
       }
       case "delete_project": {
         const { id } = payload;
         const deleted = await deleteProjectAsync(id);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, deleted });
       }
       case "add_certification": {
         const newCert = await addCertificationAsync(payload);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, item: newCert });
       }
       case "update_certification": {
         const { id, ...updates } = payload;
         const updated = await updateCertificationAsync(id, updates);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, item: updated });
       }
       case "delete_certification": {
         const { id } = payload;
         const deleted = await deleteCertificationAsync(id);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, deleted });
       }
       case "update_profile": {
+        if (!payload || typeof payload !== "object") {
+          return NextResponse.json({ error: "Invalid profile payload." }, { status: 400 });
+        }
         const updatedProfile = await updateProfileAsync(payload);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, profile: updatedProfile });
       }
       case "import_data": {
@@ -122,7 +135,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "Invalid portfolio data structure" }, { status: 400 });
         }
         await savePortfolioDataAsync(importedData);
-        revalidatePath("/");
+        revalidatePortfolio();
         return NextResponse.json({ success: true, data: importedData });
       }
       default:
