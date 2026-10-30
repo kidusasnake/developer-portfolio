@@ -97,10 +97,14 @@ export function getStorageStatus(): StorageStatus {
 // Read from Vercel KV / Upstash
 async function readFromKV(url: string, token: string): Promise<PortfolioData | null> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(`${url}/get/portfolio_data`, {
       headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store"
+      cache: "no-store",
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (!res.ok) return null;
     const json = await res.json();
     if (!json.result) return null;
@@ -114,14 +118,18 @@ async function readFromKV(url: string, token: string): Promise<PortfolioData | n
 // Write to Vercel KV / Upstash
 async function writeToKV(url: string, token: string, data: PortfolioData): Promise<boolean> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
     const res = await fetch(`${url}/set/portfolio_data`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     return res.ok;
   } catch (err) {
     console.error("KV write error:", err);

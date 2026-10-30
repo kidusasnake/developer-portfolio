@@ -8,6 +8,8 @@ import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import { getPortfolioDataAsync } from "@/lib/portfolio-data";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   const data = await getPortfolioDataAsync();
   return {
