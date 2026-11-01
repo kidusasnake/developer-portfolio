@@ -1,9 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { PortfolioData, Project, Certification, ProfileInfo, StorageStatus } from "@/types/portfolio";
+import { PortfolioData, Project, Certification, ProfileInfo, StorageStatus, ContactMessage } from "@/types/portfolio";
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "portfolio.json");
 const TMP_FILE_PATH = path.join("/tmp", "portfolio.json");
+const MESSAGES_FILE_PATH = path.join(process.cwd(), "data", "messages.json");
+const TMP_MESSAGES_FILE_PATH = path.join("/tmp", "messages.json");
 
 // Default seed data for Kidus Asnake
 const DEFAULT_PORTFOLIO_DATA: PortfolioData = {
@@ -458,4 +460,110 @@ export function updateProfile(updates: Partial<ProfileInfo>): ProfileInfo {
   };
   savePortfolioData(data);
   return data.profile;
+}
+
+// ==========================================
+// Contact Inquiries & Recruiter Messages
+// ==========================================
+
+export async function getContactMessagesAsync(): Promise<ContactMessage[]> {
+  const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (kvUrl && kvToken) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`${kvUrl}/get/contact_messages`, {
+        headers: { Authorization: `Bearer ${kvToken}` },
+        cache: "no-store",
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.result) {
+          const parsed = typeof json.result === "string" ? JSON.parse(json.result) : json.result;
+          if (Array.isArray(parsed)) return parsed;
+        }
+      }
+    } catch (err) {
+      console.error("KV read messages error:", err);
+    }
+  }
+
+  // Check /tmp file on Vercel
+  if (process.env.VERCEL && fs.existsSync(TMP_MESSAGES_FILE_PATH)) {
+    try {
+      const content = fs.readFileSync(TMP_MESSAGES_FILE_PATH, "utf8");
+      return JSON.parse(content);
+    } catch {}
+  }
+
+  // Check local data/messages.json
+  if (fs.existsSync(MESSAGES_FILE_PATH)) {
+    try {
+      const content = fs.readFileSync(MESSAGES_FILE_PATH, "utf8");
+      return JSON.parse(content);
+    } catch {}
+  }
+
+  return [];
+}
+
+export async function saveContactMessagesAsync(messages: ContactMessage[]): Promise<boolean> {
+  const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  let success = false;
+
+  if (kvUrl && kvToken) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(`${kvUrl}/set/contact_messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(messages),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) success = true;
+    } catch (err) {
+      console.error("KV write messages error:", err);
+    }
+  }
+
+  try {
+    const dir = path.dirname(MESSAGES_FILE_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(MESSAGES_FILE_PATH, JSON.stringify(messages, null, 2), "utf8");
+    success = true;
+  } catch {
+    try {
+      fs.writeFileSync(TMP_MESSAGES_FILE_PATH, JSON.stringify(messages, null, 2), "utf8");
+      success = true;
+    } catch {}
+  }
+
+  return success;
+}
+
+export async function addContactMessageAsync(message: ContactMessage): Promise<boolean> {
+  const messages = await getContactMessagesAsync();
+  const updated = [message, ...messages.filter((m) => m.id !== message.id)].slice(0, 200);
+  return saveContactMessagesAsync(updated);
+}
+
+export async function deleteContactMessageAsync(id: string): Promise<boolean> {
+  const messages = await getContactMessagesAsync();
+  const filtered = messages.filter((m) => m.id !== id);
+  return saveContactMessagesAsync(filtered);
+}
+
+export async function markContactMessageReadAsync(id: string): Promise<boolean> {
+  const messages = await getContactMessagesAsync();
+  const updated = messages.map((m) => (m.id === id ? { ...m, read: true } : m));
+  return saveContactMessagesAsync(updated);
 }

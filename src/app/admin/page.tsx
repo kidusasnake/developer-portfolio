@@ -31,10 +31,12 @@ import {
   FileText,
   Mail,
   Send,
-  Sparkles
+  Sparkles,
+  Inbox,
+  MessageSquare
 } from "lucide-react";
 import AdminModal, { ModalType } from "@/components/AdminModal";
-import { PortfolioData, Project, Certification, ProfileInfo, StorageStatus } from "@/types/portfolio";
+import { PortfolioData, Project, Certification, ProfileInfo, StorageStatus, ContactMessage } from "@/types/portfolio";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -51,11 +53,12 @@ export default function AdminPage() {
   const [devCodeHelper, setDevCodeHelper] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
 
-  // Active Tab: 'projects' | 'certifications' | 'profile'
-  const [activeTab, setActiveTab] = useState<"projects" | "certifications" | "profile">("projects");
+  // Active Tab: 'projects' | 'certifications' | 'profile' | 'messages'
+  const [activeTab, setActiveTab] = useState<"projects" | "certifications" | "profile" | "messages">("projects");
 
-  // Portfolio data in Admin
+  // Portfolio data & Messages in Admin
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [storageStatus, setStorageStatus] = useState<StorageStatus | null>(null);
   const [showStorageGuide, setShowStorageGuide] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -75,9 +78,10 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [res, statusRes] = await Promise.all([
+      const [res, statusRes, msgRes] = await Promise.all([
         fetch("/api/portfolio", { cache: "no-store" }),
-        fetch("/api/portfolio?action=status", { cache: "no-store" })
+        fetch("/api/portfolio?action=status", { cache: "no-store" }),
+        fetch("/api/contact", { cache: "no-store" })
       ]);
 
       if (res.ok) {
@@ -88,6 +92,12 @@ export default function AdminPage() {
       if (statusRes.ok) {
         const status = await statusRes.json();
         setStorageStatus(status);
+      }
+      if (msgRes.ok) {
+        const msgData = await msgRes.json();
+        if (Array.isArray(msgData.messages)) {
+          setMessages(msgData.messages);
+        }
       }
     } catch (err) {
       console.error("Failed to load portfolio data in admin", err);
@@ -368,6 +378,27 @@ export default function AdminPage() {
     });
     setTimeout(() => setFeedbackMessage(null), 4000);
     loadData();
+  };
+
+  // Message Management
+  const handleDeleteMessage = async (id: string) => {
+    try {
+      const res = await fetch(`/api/contact?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (res.ok) {
+        setMessages((prev) => prev.filter((m) => m.id !== id));
+        setFeedbackMessage({ type: "success", text: "Inquiry message deleted." });
+        setTimeout(() => setFeedbackMessage(null), 3000);
+      }
+    } catch {
+      setFeedbackMessage({ type: "error", text: "Failed to delete message." });
+    }
+  };
+
+  const handleMarkMessageRead = async (id: string) => {
+    try {
+      await fetch(`/api/contact?id=${encodeURIComponent(id)}&action=mark_read`, { method: "DELETE" });
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, read: true } : m)));
+    } catch {}
   };
 
   // Profile Save
@@ -1018,6 +1049,21 @@ export default function AdminPage() {
               <UserCheck className="w-4 h-4" />
               <span>Profile & Hero Config</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("messages")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all relative ${
+                activeTab === "messages"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+              }`}
+            >
+              <Inbox className="w-4 h-4" />
+              <span>Inquiries ({messages.length})</span>
+              {messages.filter((m) => !m.read).length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              )}
+            </button>
           </div>
 
           <div className="flex items-center gap-3">
@@ -1586,6 +1632,114 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* TAB 4: INQUIRIES & RECRUITER MESSAGES */}
+        {activeTab === "messages" && (
+          <div className="glass-panel rounded-3xl border border-slate-800 p-8 shadow-2xl max-w-5xl mx-auto">
+            <div className="mb-6 pb-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2.5">
+                  <Inbox className="w-6 h-6 text-purple-400" />
+                  Recruiter Inquiries & Messages
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Messages submitted by visitors and recruiters through your public contact form. Stored permanently in Upstash Redis.
+                </p>
+              </div>
+              <div className="text-xs font-mono text-slate-400 bg-slate-950/70 border border-slate-800 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+                Total: <span className="text-purple-400 font-bold">{messages.length}</span> messages
+              </div>
+            </div>
+
+            {messages.length === 0 ? (
+              <div className="text-center py-16 px-4">
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8 opacity-60" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-1">No Inquiries Yet</h3>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  When recruiters and clients send a message through your portfolio contact section, it will appear here and forward to your email.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`p-5 rounded-2xl border transition-colors ${
+                      msg.read
+                        ? "bg-slate-950/50 border-slate-800 opacity-90"
+                        : "bg-slate-900/80 border-purple-500/30 shadow-lg shadow-purple-500/5"
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-white">{msg.name}</span>
+                          {!msg.read && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                              New
+                            </span>
+                          )}
+                        </div>
+                        <a
+                          href={`mailto:${msg.email}?subject=Re:%20${encodeURIComponent(msg.subject)}`}
+                          className="text-xs text-cyan-400 hover:underline mt-0.5 inline-block"
+                        >
+                          {msg.email}
+                        </a>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <span className="text-[11px] text-slate-500 font-mono">
+                          {new Date(msg.createdAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          })}
+                        </span>
+                        <a
+                          href={`mailto:${msg.email}?subject=Re:%20${encodeURIComponent(msg.subject)}`}
+                          className="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1 transition-colors"
+                          title="Reply to Recruiter"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span className="text-[11px] hidden sm:inline">Reply</span>
+                        </a>
+                        {!msg.read && (
+                          <button
+                            onClick={() => handleMarkMessageRead(msg.id)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
+                            title="Mark as Read"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                          title="Delete Message"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-xs font-semibold text-slate-300 mb-1.5">
+                      Subject: <span className="text-white font-normal">{msg.subject}</span>
+                    </div>
+
+                    <div className="bg-slate-950/70 rounded-xl p-3.5 border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap break-words">
+                      {msg.message}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

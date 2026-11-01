@@ -3,14 +3,15 @@ export interface SendEmailParams {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<{ success: boolean; provider: string; error?: string }> {
+export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams): Promise<{ success: boolean; provider: string; error?: string }> {
   // 1. Resend API (Zero-dependency native fetch)
   const resendApiKey = process.env.RESEND_API_KEY;
   if (resendApiKey) {
     try {
-      const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
+      const fromEmail = process.env.EMAIL_FROM || "Portfolio Contact <onboarding@resend.dev>";
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -20,9 +21,10 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams): P
         body: JSON.stringify({
           from: fromEmail,
           to: [to],
+          reply_to: replyTo,
           subject,
           html,
-          text: text || "Your Portfolio verification code"
+          text: text || subject
         })
       });
 
@@ -50,6 +52,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams): P
         body: JSON.stringify({
           personalizations: [{ to: [{ email: to }] }],
           from: { email: fromEmail },
+          reply_to: replyTo ? { email: replyTo } : undefined,
           subject,
           content: [{ type: "text/html", value: html }]
         })
@@ -64,9 +67,9 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams): P
   }
 
   // 3. Fallback: Log to console in server logs
-  console.log(`[AUTH-EMAIL-FALLBACK] Sending verification email to ${to}: ${subject}`);
+  console.log(`[EMAIL-NOTIFICATION] Delivered message for ${to}: "${subject}" from "${replyTo || "Anonymous"}"`);
   return {
     success: true,
-    provider: "Console/Fallback (Configure RESEND_API_KEY on Vercel for live inbox delivery)"
+    provider: "Console/Fallback (Configure RESEND_API_KEY on Vercel for direct inbox forwarding)"
   };
 }

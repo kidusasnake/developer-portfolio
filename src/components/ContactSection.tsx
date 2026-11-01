@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, MapPin, Send, Check, Copy, Sparkles, MessageSquare, Clock } from "lucide-react";
+import { Mail, MapPin, Send, Check, Copy, Sparkles, MessageSquare, Clock, AlertCircle } from "lucide-react";
 import { ProfileInfo } from "@/types/portfolio";
 
 interface ContactSectionProps {
@@ -12,6 +12,7 @@ export default function ContactSection({ profile }: ContactSectionProps) {
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,16 +26,32 @@ export default function ContactSection({ profile }: ContactSectionProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate instantaneous delivery feedback
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsSuccess(true);
+        setFormData({ name: "", email: "", subject: "", message: "" });
+        setTimeout(() => setIsSuccess(false), 8000);
+      } else {
+        setErrorMessage(data.error || "Failed to send message. Please try again.");
+      }
+    } catch {
+      setErrorMessage("Network error sending message. Please reach out via direct email.");
+    } finally {
       setIsSubmitting(false);
-      setIsSuccess(true);
-      setFormData({ name: "", email: "", subject: "", message: "" });
-      setTimeout(() => setIsSuccess(false), 5000);
-    }, 700);
+    }
   };
 
   return (
@@ -142,6 +159,21 @@ export default function ContactSection({ profile }: ContactSectionProps) {
                 <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-2.5">
                   <Check className="w-5 h-5 shrink-0" />
                   <span>Thank you! Your message has been sent successfully. I will be in touch shortly.</span>
+                </div>
+              )}
+
+              {errorMessage && (
+                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center justify-between gap-2.5 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                  <a
+                    href={`mailto:${profile.email}?subject=${encodeURIComponent(formData.subject || "Inquiry")}&body=${encodeURIComponent(formData.message)}`}
+                    className="text-xs font-semibold underline text-red-300 hover:text-white"
+                  >
+                    Email Directly
+                  </a>
                 </div>
               )}
 

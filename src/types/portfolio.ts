@@ -54,6 +54,16 @@ export interface PortfolioData {
   certifications: Certification[];
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  createdAt: string;
+  read?: boolean;
+}
+
 export interface StorageStatus {
   mode: "cloud_kv" | "supabase" | "github_sync" | "serverless_dual_mode" | "local_filesystem";
   isPersistent: boolean;
