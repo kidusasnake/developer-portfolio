@@ -84,7 +84,9 @@ export default function Hero({ profile }: HeroProps) {
             <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto mb-12">
               <a
                 href={profile.resumeUrl}
-                download={`${(profile.name || "Resume").replace(/\s+/g, "_")}_Resume.pdf`}
+                download={profile.resumeUrl?.startsWith("http") ? undefined : `${(profile.name || "Resume").replace(/\s+/g, "_")}_Resume.pdf`}
+                target={profile.resumeUrl?.startsWith("http") ? "_blank" : undefined}
+                rel="noopener noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200"
               >
                 <Download className="w-4 h-4" />

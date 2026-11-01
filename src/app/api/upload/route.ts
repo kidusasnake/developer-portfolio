@@ -34,19 +34,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate mime type
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"];
-    if (!validTypes.includes(file.type)) {
+    const ext = path.extname(file.name).toLowerCase();
+    const validExtensions = [
+      ".jpg", ".jpeg", ".png", ".webp", ".svg", ".gif",
+      ".pdf", ".doc", ".docx", ".rtf", ".txt"
+    ];
+    const validMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/svg+xml",
+      "image/gif",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/rtf",
+      "text/plain"
+    ];
+
+    const isValidType = (file.type && validMimeTypes.includes(file.type)) || (ext && validExtensions.includes(ext));
+    if (!isValidType) {
       return NextResponse.json(
-        { error: "Invalid file type. Allowed: PNG, JPG, WEBP, SVG, GIF" },
+        { error: "Invalid file type. Allowed: PDF, DOC, DOCX, TXT, RTF, PNG, JPG, WEBP, SVG, GIF" },
         { status: 400 }
       );
     }
 
-    // Max 5MB
-    if (file.size > 5 * 1024 * 1024) {
+    // Max 15MB
+    if (file.size > 15 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "File exceeds 5MB size limit" },
+        { error: "File exceeds 15MB size limit" },
         { status: 400 }
       );
     }
@@ -61,13 +78,13 @@ export async function POST(req: NextRequest) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
 
-      const ext = path.extname(file.name) || ".png";
+      const fileExt = ext || (file.type === "application/pdf" ? ".pdf" : ".png");
       const baseName = path
-        .basename(file.name, ext)
+        .basename(file.name, fileExt)
         .toLowerCase()
         .replace(/[^a-z0-9_-]/g, "-")
         .slice(0, 30);
-      const fileName = `${Date.now()}-${baseName}${ext}`;
+      const fileName = `${Date.now()}-${baseName}${fileExt}`;
       const filePath = path.join(uploadsDir, fileName);
 
       fs.writeFileSync(filePath, buffer);
@@ -82,7 +99,8 @@ export async function POST(req: NextRequest) {
       // In Vercel serverless (read-only filesystem), encode as Base64 Data URL
       // This allows immediate rendering and persistence without requiring external S3
       const base64 = buffer.toString("base64");
-      const dataUrl = `data:${file.type};base64,${base64}`;
+      const mime = file.type || (ext === ".pdf" ? "application/pdf" : "application/octet-stream");
+      const dataUrl = `data:${mime};base64,${base64}`;
 
       return NextResponse.json({
         success: true,
@@ -95,7 +113,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json(
-      { error: "Failed to process image upload." },
+      { error: "Failed to process file upload." },
       { status: 500 }
     );
   }

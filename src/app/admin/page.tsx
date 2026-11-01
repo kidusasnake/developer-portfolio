@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileJson,
+  FileText,
   Mail,
   Send,
   Sparkles
@@ -69,6 +70,7 @@ export default function AdminPage() {
   // Profile Form state
   const [profileForm, setProfileForm] = useState<ProfileInfo | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
 
   const loadData = useCallback(async () => {
     setRefreshing(true);
@@ -421,6 +423,44 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error("Avatar upload error", err);
+    }
+  };
+
+  // Profile Resume Upload
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profileForm) return;
+
+    setUploadingResume(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        setProfileForm({ ...profileForm, resumeUrl: data.url });
+        setFeedbackMessage({
+          type: "success",
+          text: `Resume "${file.name}" uploaded successfully! Click "Publish Profile Updates" to save.`
+        });
+        setTimeout(() => setFeedbackMessage(null), 5000);
+      } else {
+        setFeedbackMessage({
+          type: "error",
+          text: data.error || "Failed to upload resume file."
+        });
+      }
+    } catch (err) {
+      console.error("Resume upload error", err);
+      setFeedbackMessage({ type: "error", text: "Network error uploading resume file." });
+    } finally {
+      setUploadingResume(false);
+      e.target.value = "";
     }
   };
 
@@ -1398,29 +1438,80 @@ export default function AdminPage() {
               </div>
 
               {/* Resume & Links */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Resume Document URL
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.resumeUrl}
-                    onChange={(e) => setProfileForm({ ...profileForm, resumeUrl: e.target.value })}
-                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white"
-                  />
+              <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-cyan-400" />
+                      Resume / Curriculum Vitae
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Upload your resume file directly (PDF, DOCX) or enter an external document link.
+                    </p>
+                  </div>
+                  <div>
+                    <label className={`cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition ${
+                      uploadingResume
+                        ? "bg-slate-800 border-slate-700 text-slate-400 cursor-not-allowed"
+                        : "bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/20"
+                    }`}>
+                      <Upload className={`w-3.5 h-3.5 ${uploadingResume ? "animate-spin" : ""}`} />
+                      <span>{uploadingResume ? "Uploading Resume..." : "Upload Resume File"}</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        className="hidden"
+                        disabled={uploadingResume}
+                        onChange={handleResumeUpload}
+                      />
+                    </label>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                    Contact Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={profileForm.email}
-                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                    className="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800/80">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                      <span>Resume File URL or Path</span>
+                      {profileForm.resumeUrl && (
+                        <a
+                          href={profileForm.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 font-medium"
+                          title="Preview the currently configured resume"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Preview Current Resume
+                        </a>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.resumeUrl}
+                      onChange={(e) => setProfileForm({ ...profileForm, resumeUrl: e.target.value })}
+                      placeholder="/resume.pdf or https://..."
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 font-mono"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Uploading a file fills this automatically. Visitors receive this when clicking &quot;Download Resume&quot;.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Contact Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Target email for inquiries sent through your public contact form.
+                    </p>
+                  </div>
                 </div>
               </div>
 
